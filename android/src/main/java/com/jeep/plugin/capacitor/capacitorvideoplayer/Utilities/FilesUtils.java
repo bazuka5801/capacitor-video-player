@@ -33,6 +33,9 @@ public class FilesUtils {
                 path = null;
             }
         }
+        if (path == null && url.contains("://")) {
+            return url;
+        }
         return path;
     }
 }
