@@ -37,7 +37,7 @@ extension CapacitorVideoPlayerPlugin {
                 dict["url"] = url
                 return dict
             } else {
-                dict["message"] = "cannot convert filePath in URL"
+                dict["message"] = "cannot convert filePath to URL"
                 return dict
             }
         }
@@ -51,17 +51,47 @@ extension CapacitorVideoPlayerPlugin {
             }
         }
         if String(filePath.prefix(29)) == "file:///var/mobile/Containers" {
-
             let appPath: String = NSSearchPathForDirectoriesInDomains(.applicationDirectory,
                                                                       .userDomainMask,
                                                                       true)[0]
             // get the appId from the appPath
-            let pathArray = appPath.components(separatedBy: "Application")
-            let appId: String = pathArray[1].replacingOccurrences(of: "/", with: "")
+            var pathArray: [String]
+            var appId: String
+            if filePath.contains("AppGroup") {
+                if let uPath = URL(string:filePath) {
+                    
+                    if !isFileExists(filePath: uPath.path) {
+                        print("*** file does not exist at path \n \(uPath) \n***")
+                        let info: [String: Any] = ["dismiss": true]
+                        self.notifyListeners("jeepCapVideoPlayerExit", data: info,
+                                             retainUntilConsumed: true)
+                        dict["message"] = "file does not exist"
+                        return dict
+                    }
+                    dict["url"] = URL(fileURLWithPath: uPath.path)
+                } else {
+                    dict["message"] = "file path not correct"
+                }
+                return dict
+            } else {
+                pathArray = appPath.components(separatedBy: "Application")
+                appId = pathArray[1].replacingOccurrences(of: "/", with: "")
+            }
+            
             // remove the appId from the given filePath and replace it with the current appId
-            let fPathArray = filePath.components(separatedBy: "Application")
+            var fPathArray: [String]
+            if filePath.contains("Shared/AppGroup") {
+                fPathArray = filePath.components(separatedBy: "Shared/AppGroup")
+            } else if filePath.contains("Application") {
+                fPathArray = filePath.components(separatedBy: "Application")
+            } else {
+                // Handle the case where the filePath does not contain either "AppGroup" or "Application"
+                dict["message"] = "file path not correct"
+                return dict
+            }
+            
             if let uPath = URL(string: pathArray[0]) {
-                let fPath = (uPath.appendingPathComponent("Application")
+                let fPath = (uPath.appendingPathComponent("Shared/AppGroup")
                                 .appendingPathComponent(appId)
                                 .appendingPathComponent(
                                     String(fPathArray[1].dropFirst(38)))
@@ -87,7 +117,7 @@ extension CapacitorVideoPlayerPlugin {
             // get the appId from the appPath
             let pathArray = appPath.components(separatedBy: "Containers")
             let fPathArray = filePath.components(separatedBy: "mobile/")
-
+            
             if let uPath = URL(string: pathArray[0]) {
                 let fPath = (uPath.appendingPathComponent(
                                 String(fPathArray[1]))
