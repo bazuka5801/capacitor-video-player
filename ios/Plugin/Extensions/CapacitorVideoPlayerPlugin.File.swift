@@ -54,12 +54,26 @@ extension CapacitorVideoPlayerPlugin {
             let appPath: String = NSSearchPathForDirectoriesInDomains(.applicationDirectory,
                                                                       .userDomainMask,
                                                                       true)[0]
+            
+            
+            if let uPath = URL(string:filePath) {
+                if isFileExists(filePath: uPath.path) {
+                    dict["url"] = URL(fileURLWithPath: uPath.path)
+                    return dict
+                }
+            }
             // get the appId from the appPath
             var pathArray: [String]
             var appId: String
-            if filePath.contains("AppGroup") {
+           
+            pathArray = appPath.components(separatedBy: "Application")
+            appId = pathArray[1].replacingOccurrences(of: "/", with: "")
+            // remove the appId from the given filePath and replace it with the current appId
+            var fPathArray: [String]
+            if filePath.contains("Shared/AppGroup") {
+                fPathArray = filePath.components(separatedBy: "Shared/AppGroup")
+            } else if filePath.contains("Library/Caches/") {
                 if let uPath = URL(string:filePath) {
-                    
                     if !isFileExists(filePath: uPath.path) {
                         print("*** file does not exist at path \n \(uPath) \n***")
                         let info: [String: Any] = ["dismiss": true]
@@ -73,20 +87,10 @@ extension CapacitorVideoPlayerPlugin {
                     dict["message"] = "file path not correct"
                 }
                 return dict
-            } else {
-                pathArray = appPath.components(separatedBy: "Application")
-                appId = pathArray[1].replacingOccurrences(of: "/", with: "")
-            }
-            
-            // remove the appId from the given filePath and replace it with the current appId
-            var fPathArray: [String]
-            if filePath.contains("Shared/AppGroup") {
-                fPathArray = filePath.components(separatedBy: "Shared/AppGroup")
             } else if filePath.contains("Application") {
                 fPathArray = filePath.components(separatedBy: "Application")
             } else {
-                // Handle the case where the filePath does not contain either "AppGroup" or "Application"
-                dict["message"] = "file path not correct"
+                dict["message"] = "file does not exist"
                 return dict
             }
             
